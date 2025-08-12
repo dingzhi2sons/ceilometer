@@ -115,6 +115,14 @@ class SensorNotification(endpoint.SampleEndpoint):
                 except KeyError as exc:
                     raise InvalidSensorData('missing key in payload: %s' % exc)
 
+                if (
+                    self.metric == 'Current' and
+                    'Pwr Consumption' in payload['Sensor ID']
+                ):
+                    name = 'hardware.ipmi.power'
+                else:
+                    name = 'hardware.ipmi.%s' % self.metric.lower()
+
                 info = self._package_payload(message, payload)
 
                 try:
@@ -127,7 +135,7 @@ class SensorNotification(endpoint.SampleEndpoint):
                 if validate_reading(sensor_reading):
                     volume, unit = parse_reading(sensor_reading)
                     yield sample.Sample.from_notification(
-                        name='hardware.ipmi.%s' % self.metric.lower(),
+                        name=name,
                         type=sample.TYPE_GAUGE,
                         unit=unit,
                         volume=volume,
